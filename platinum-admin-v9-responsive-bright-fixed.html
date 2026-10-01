@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Platinum Fleet System</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0/dist/umd/supabase.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--red:#d62828;--navy:#101827;--bg:#f4f5f8;--card:#fff;--bd:#e4e7ee;--tx:#111827;--mu:#6b7280;--ok:#15803d;--wn:#d97706}
+*{box-sizing:border-box}body{margin:0;font:14px/1.45 system-ui,"Segoe UI",Tahoma,Arial,sans-serif;background:var(--bg);color:var(--tx)}
+button,input,select{font:inherit}.hide{display:none!important}
+#login{min-height:100vh;display:grid;place-items:center;background:var(--navy)}
+#login form{background:#fff;padding:32px;border-radius:16px;width:340px;display:grid;gap:12px}.passkey-note{font-size:11px;color:var(--mu);text-align:center}
+input,select{padding:9px 11px;border:1px solid var(--bd);border-radius:10px;background:#fff}
+.btn{background:var(--red);color:#fff;border:0;border-radius:10px;padding:9px 14px;cursor:pointer}.btn.g{background:#fff;color:var(--tx);border:1px solid var(--bd)}
+#app{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+aside{background:var(--navy);color:#cbd2e0;padding:18px 12px;position:sticky;top:0;height:100vh}
+.logo{display:flex;gap:10px;align-items:center;color:#fff;margin:0 8px 22px;font-weight:700;letter-spacing:.06em}
+.logo i{background:var(--red);border-radius:8px;width:34px;height:34px;display:grid;place-items:center;font-style:normal}.logo small{display:block;font-size:10px;font-weight:400;opacity:.7}
+nav a{display:block;padding:10px 12px;border-radius:10px;color:inherit;text-decoration:none;cursor:pointer;margin-bottom:2px}
+nav a.on{background:var(--red);color:#fff}nav a:hover:not(.on){background:#1b2537}
+header{background:#fff;border-bottom:1px solid var(--bd);padding:12px 24px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+header h1{margin:0;font-size:20px}header p{margin:0;color:var(--mu)}.sp{flex:1}
+main{padding:20px 24px}.grid{display:grid;gap:14px}.k6{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.c3{grid-template-columns:2fr 1.4fr 1fr}.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;box-shadow:0 1px 2px rgba(16,24,39,.04)}
+.card h3{margin:0 0 10px;font-size:15px}.kv{font-size:24px;font-weight:700}.lb{color:var(--mu);font-size:12px}
+.tw{overflow:auto;max-height:520px}table{border-collapse:collapse;width:100%;min-width:760px}
+th{position:sticky;top:0;background:#f8f9fb;text-align:left;font-size:12px;color:var(--mu);padding:9px 10px;border-bottom:1px solid var(--bd);white-space:nowrap}
+td{unicode-bidi:plaintext;padding:9px 10px;border-bottom:1px solid var(--bd);white-space:nowrap}tbody tr:hover{background:#fafbfd}tr[data-t]{cursor:pointer}
+.b{padding:2px 9px;border-radius:8px;font-size:12px;background:#eef0f4}.b.ok{background:#dcfce7;color:var(--ok)}.b.wn{background:#fef3c7;color:#92400e}.b.rd{background:#fee2e2;color:#b91c1c}
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}.tabs button{border:1px solid var(--bd);background:#fff;border-radius:10px;padding:7px 12px;cursor:pointer}.tabs .on{background:var(--red);color:#fff;border-color:var(--red)}
+.fl{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+#modal{position:fixed;inset:0;background:rgba(16,24,39,.55);display:grid;place-items:center;padding:16px;z-index:9}
+#modal>div{background:#fff;border-radius:16px;max-width:900px;width:100%;max-height:92vh;overflow:auto;padding:20px}
+.ims{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}.ims figure{margin:0;border:1px solid var(--bd);border-radius:12px;padding:8px}
+.ims img{width:100%;height:170px;object-fit:cover;border-radius:8px;cursor:zoom-in}.ims a{font-size:12px;color:var(--red)}
+#lb{position:fixed;inset:0;background:#000d;display:grid;place-items:center;z-index:99;cursor:zoom-out}#lb img{max-width:95vw;max-height:95vh}
+.msg{padding:24px;text-align:center;color:var(--mu)}.err{color:#b91c1c}
+@media(max-width:900px){#app{grid-template-columns:1fr}aside{position:fixed;bottom:0;top:auto;height:auto;width:100%;z-index:5;padding:6px;overflow-x:auto}
+aside .logo{display:none}nav{display:flex;gap:4px}nav a{white-space:nowrap;margin:0}main{padding:14px 14px 80px}.c3{grid-template-columns:1fr}}
+@media print{aside,header .btn,.fl,.tabs{display:none}#app{display:block}}
+
+/* ===== PLATINUM ADMIN FIXED — VISUAL MATCH ===== */
+:root{
+  --red:#e52b2b;--navy:#111827;--bg:#f3f5f8;--card:#fff;
+  --bd:#e1e5eb;--tx:#18202d;--mu:#6b7280;--ok:#15803d;--wn:#d97706;
+}
+body{font-family:Arial,"Segoe UI",Tahoma,sans-serif;background:#f3f5f8;color:#18202d}
+#app{grid-template-columns:230px 1fr}
+aside{background:#111827;padding:18px 12px}
+.logo{margin:0 8px 22px}
+.logo i{background:#e52b2b}
+nav a{padding:10px 12px;font-weight:600}
+nav a.on{background:#e52b2b}
+header{min-height:64px;padding:10px 24px;background:#fff;border-bottom:1px solid #e1e5eb}
+header h1{font-size:19px;font-weight:700}
+header p{font-size:12px}
+header input[type=date]{height:38px;padding:8px 10px}
+.btn{background:#e52b2b;border-radius:9px;font-weight:600}
+.btn.g{background:#fff;border-color:#dfe3e9}
+main{padding:18px 24px}
+.grid{gap:14px}
+.k6{grid-template-columns:repeat(6,minmax(150px,1fr))}
+.card{border-radius:13px;border:1px solid #e1e5eb;box-shadow:0 2px 5px rgba(16,24,39,.05);padding:15px}
+.card h3{font-size:14px;font-weight:600;color:#4b5563}
+.kv{font-size:22px;line-height:1.2}
+.lb{font-size:11px;color:#7a8493}
+.c3{grid-template-columns:1.25fr 1fr .9fr}
+canvas{max-width:100%}
+table{font-size:13px}
+th{background:#f8f9fb}
+@media(max-width:1200px){.k6{grid-template-columns:repeat(3,minmax(150px,1fr))}}
+@media(max-width:900px){.k6{grid-template-columns:repeat(2,minmax(140px,1fr))}}
+
+
+/* ===== V7 TRANS-LOGISTIX INSPIRED DARK CONTROL ROOM ===== */
+:root{--red:#e52b2b;--navy:#07131d;--navy2:#0b1d29;--panel:#0e202c;--panel2:#102734;--line:#203847;--text:#edf5f7;--muted:#8ea4af;--cyan:#35e0cf;--blue:#35a9ff;--green:#35e0a0;--yellow:#f2c94c;--danger:#ff6262}
+body{background:#07131d;color:var(--text);font-family:Inter,system-ui,"Segoe UI",Tahoma,Arial,sans-serif}
+#app{grid-template-columns:228px 1fr;background:#07131d}
+aside{background:#081722;border-left:1px solid #102a38;border-right:0;box-shadow:10px 0 30px rgba(0,0,0,.18);padding:18px 12px}
+.logo{color:#fff;margin:2px 8px 24px;letter-spacing:.04em}.logo i{background:linear-gradient(135deg,#e52b2b,#ff4d4d);box-shadow:0 0 18px rgba(229,43,43,.28)}
+nav a{color:#91a6b2;border-radius:9px;padding:11px 12px;margin:3px 0;font-weight:600;transition:.15s}nav a:hover:not(.on){background:#0f2735;color:#fff}nav a.on{background:linear-gradient(90deg,#e52b2b,#c91e1e);color:#fff;box-shadow:0 7px 18px rgba(229,43,43,.18)}
+header{background:#0a1a25;border-bottom:1px solid var(--line);padding:13px 24px;color:#fff;min-height:68px}header h1{font-size:20px;color:#fff}header p{color:var(--muted)}header input[type=date]{background:#102431;color:#dce8ed;border-color:#29404d;color-scheme:dark}.btn{background:#e52b2b;border-radius:8px;font-weight:700}.btn.g{background:#102431;color:#dce8ed;border-color:#29404d}.btn.g:hover{background:#16313f}
+main{padding:20px 24px}.card{background:linear-gradient(145deg,#0d202c,#0b1b26);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.14);padding:16px}.card h3{color:#eaf4f6}.lb{color:var(--muted)}.kv{color:#fff}
+.k6{gap:12px}.c3{gap:12px}.tw{scrollbar-color:#29404d transparent}table{min-width:760px}th{background:#0b1d28;color:#8fa7b3;border-bottom-color:#1e3744}td{color:#dbe7eb;border-bottom-color:#18313e}tbody tr:hover{background:#102936}
+.b{background:#17303b;color:#dce8ed}.b.ok{background:rgba(53,224,160,.12);color:#53e3ad}.b.wn{background:rgba(242,201,76,.13);color:#f2c94c}.b.rd{background:rgba(255,98,98,.13);color:#ff7676}
+.tabs button,select,input{background:#0e2430;color:#e5eef1;border-color:#28414f}select option{background:#0e2430;color:#fff}.tabs .on{background:#e52b2b;border-color:#e52b2b}
+.fl{margin-bottom:14px}.msg{color:#8ea4af}.err{color:#ff7676}
+#modal{background:rgba(0,8,13,.78)}#modal>div{background:#0c202c;border:1px solid #27404d;color:#eef5f7}#lb{background:#000e}
+/* Dashboard control-room cards */
+.v7dash{display:grid;grid-template-columns:1.65fr .85fr;gap:12px;margin-top:12px}.v7map{min-height:360px;position:relative;overflow:hidden;background:radial-gradient(circle at 58% 45%,rgba(53,224,207,.09),transparent 34%),linear-gradient(145deg,#0a1b27,#08141e)}
+.v7map:before{content:"";position:absolute;inset:0;opacity:.25;background-image:linear-gradient(rgba(53,224,207,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(53,224,207,.12) 1px,transparent 1px);background-size:46px 46px;transform:perspective(500px) rotateX(52deg) scale(1.4);transform-origin:center 70%}
+.route{position:absolute;height:3px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);box-shadow:0 0 12px rgba(53,224,207,.65);transform-origin:left center;border-radius:5px}.r1{width:45%;left:14%;top:55%;transform:rotate(-18deg)}.r2{width:37%;left:39%;top:48%;transform:rotate(16deg)}.r3{width:29%;left:51%;top:62%;transform:rotate(-32deg)}
+.node{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--cyan);box-shadow:0 0 16px var(--cyan)}.node:after{content:"";position:absolute;left:13px;top:-7px;white-space:nowrap;color:#9bc0c8;font-size:10px}.n1{left:19%;top:49%}.n1:after{content:"CAR001"}.n2{left:53%;top:40%}.n2:after{content:"CAR002"}.n3{left:67%;top:64%}.n3:after{content:"CAR003"}.v7maptitle{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:center}.v7maptitle b{font-size:15px}.v7maptitle span{font-size:11px;color:var(--muted)}
+.v7side{display:grid;gap:12px}.gauge{display:flex;justify-content:space-between;gap:10px}.gaugeItem{flex:1}.ring{width:68px;height:68px;border-radius:50%;margin:4px auto 6px;display:grid;place-items:center;border:6px solid #173642;position:relative}.ring:after{content:"";position:absolute;inset:-6px;border-radius:50%;border:6px solid transparent;border-top-color:var(--cyan);border-right-color:var(--cyan);transform:rotate(-25deg)}.ring b{font-size:15px}.glabel{text-align:center;color:var(--muted);font-size:11px}.alertRow{padding:10px 0;border-bottom:1px solid #18313e}.alertRow:last-child{border-bottom:0}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:6px;background:var(--cyan)}.dot.red{background:var(--danger);box-shadow:0 0 9px rgba(255,98,98,.5)}
+.v7bottom{display:grid;grid-template-columns:1.2fr 1fr;gap:12px;margin-top:12px}.miniStat{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #18313e}.miniStat:last-child{border-bottom:0}.miniStat strong{font-size:15px}.accent{color:var(--cyan)}.blue{color:var(--blue)}.warn{color:var(--yellow)}
+
+#fleetMap{position:absolute;inset:0;z-index:1;min-height:360px}.fleetOverlay{position:absolute;z-index:900;top:54px;right:12px;background:rgba(7,18,28,.9);border:1px solid #284452;border-radius:10px;padding:8px 10px;color:#b8cbd1;font-size:10px;backdrop-filter:blur(8px)}.fleetLegend{display:flex;gap:8px;flex-wrap:wrap}.fleetLegend span{display:inline-flex;align-items:center;gap:4px}.fleetDot{width:8px;height:8px;border-radius:50%;display:inline-block}.fleetDot.live{background:#35e0cf}.fleetDot.stop{background:#f0b44c}.fleetDot.off{background:#73828a}.leaflet-control-attribution{font-size:8px}.leaflet-control-layers{background:rgba(7,18,28,.94)!important;color:#d8e6eb!important;border:1px solid #284452!important;border-radius:10px!important;box-shadow:0 8px 24px rgba(0,0,0,.28)!important}.leaflet-control-layers label{color:#d8e6eb!important;font-size:12px}.leaflet-control-layers-separator{border-top:1px solid #284452!important}
+@media(max-width:1100px){.v7dash,.v7bottom{grid-template-columns:1fr}.v7map{min-height:300px}}
+@media(max-width:900px){#app{grid-template-columns:1fr}aside{position:fixed;bottom:0;top:auto;width:100%;height:auto;z-index:20;padding:6px;border-top:1px solid #203847}aside .logo{display:none}nav{display:flex;gap:3px;overflow-x:auto}nav a{white-space:nowrap;margin:0;padding:9px 10px;font-size:12px}main{padding:14px 14px 82px}.v7map{min-height:270px}}
+
+/* ===== V8 RESPONSIVE — same Admin app on desktop + mobile ===== */
+@media (max-width: 900px){
+  html,body{min-width:0;overflow-x:hidden}
+  #app{display:block;min-height:100vh}
+  #app>aside{position:fixed;left:0;right:auto;top:0;bottom:0;width:250px;height:100vh;z-index:1000;padding:18px 12px;overflow-y:auto;transform:translateX(-105%);transition:transform .22s ease;box-shadow:18px 0 35px rgba(0,0,0,.45);border-right:1px solid #203847;border-top:0}
+  #app>aside.mobile-open{transform:translateX(0)}
+  #app>aside .logo{display:flex}
+  #app nav{display:block;overflow:visible}
+  #app nav a{display:block;white-space:normal;margin:3px 0;padding:11px 12px;font-size:14px}
+  #mobileNavBtn{display:inline-grid!important;place-items:center;width:40px;height:40px;padding:0;border-radius:9px;flex:0 0 40px}
+  #mobileNavShade{display:none!important;position:fixed;inset:0;background:rgba(0,0,0,.58);z-index:999}
+  #mobileNavShade:not(.hide){display:block!important}
+  #app>div{width:100%;min-width:0}
+  header{position:sticky;top:0;z-index:50;padding:10px 12px;gap:8px;min-height:60px}
+  header>div:first-of-type{min-width:0;flex:1}
+  header h1{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  header p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  header .sp{display:none}
+  header input[type=date]{width:calc(50% - 4px);min-width:130px;flex:1}
+  header #rf,header #bell{min-height:40px}
+  header>div:last-of-type{display:none}
+  header #lo{display:none}
+  main{padding:12px 10px 18px;min-width:0}
+  .k6{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .c3,.v7dash,.v7bottom{grid-template-columns:1fr}
+  .card{padding:13px;border-radius:11px;min-width:0}
+  .kv{font-size:20px}
+  .v7map{min-height:340px;height:340px}
+  #fleetMap{min-height:340px}
+  .fleetOverlay{top:48px;right:8px;max-width:calc(100% - 16px)}
+  .tw{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{min-width:760px}
+  .fl{gap:7px}
+  .fl>*{max-width:100%}
+  .tabs{overflow-x:auto;flex-wrap:nowrap;padding-bottom:3px;-webkit-overflow-scrolling:touch}
+  .tabs button{white-space:nowrap;min-height:40px}
+  #modal{padding:8px}
+  #modal>div{max-height:94vh;padding:14px;border-radius:12px}
+  .ims{grid-template-columns:1fr}
+  .ims img{height:auto;max-height:260px}
+}
+@media (min-width:901px){#mobileNavBtn,#mobileNavShade{display:none!important}}
+@media (max-width:520px){
+  .btn{min-height:40px}.tabs button,nav a{min-height:40px}
+  input,select{min-height:40px}
+
+  header{flex-wrap:wrap}
+  header>div:first-of-type{order:2;flex-basis:calc(100% - 48px)}
+  #mobileNavBtn{order:1}
+  header input[type=date]{order:3;width:calc(50% - 5px);min-width:0}
+  header #rf,header #bell{order:4;flex:1;min-width:0}
+  .k6{grid-template-columns:1fr 1fr}
+  .v7map{height:300px;min-height:300px}
+  #fleetMap{min-height:300px}
+  .v7maptitle{gap:8px}
+  .v7maptitle b{font-size:13px}
+  .v7maptitle span{font-size:10px}
+  .gauge{gap:4px}.ring{width:58px;height:58px}
+}
+
+
+/* ===== V9 VISIBILITY + INTERACTION FIX ===== */
+body{background:#0a1722;color:#f5fbfd}
+header{background:#0d202c;border-bottom:1px solid #31505f}
+header h1{color:#ffffff} header p{color:#b8cbd3}
+main{background:#0a1722}
+.card{background:linear-gradient(145deg,#122a38,#0f222e);border-color:#31505f;box-shadow:0 8px 24px rgba(0,0,0,.28)}
+.card h3{color:#f4fbfd}.lb{color:#b8cbd3}.kv{color:#ffffff}
+nav a{color:#b7cbd3} nav a:hover:not(.on){background:#173544;color:#fff}
+th{background:#102734;color:#b5c9d1;border-bottom-color:#31505f}td{color:#edf6f8;border-bottom-color:#294451}
+tbody tr:hover{background:#173544}
+.tabs button,input,select{background:#112a37;color:#f1f8fa;border-color:#355261}.tabs button{color:#dce9ed}.tabs button:hover{background:#183a4a}
+.btn.g{background:#15313f;color:#f3f9fb;border-color:#3b5a68}.btn.g:hover{background:#1c4051}
+.msg{color:#b4c8d0}.fl label{color:#dce9ed}
+.v7map,.v7bottom .card{border-color:#31505f}
+#modal>div{background:#102735;border-color:#3a5866;color:#f4fbfd}
+
+</style></head><body>
+<div id="login"><form id="lf"><div class="logo" style="color:var(--tx);margin:0"><i style="color:#fff">PF</i><div>PLATINUM<small>FLEET SYSTEM</small></div></div>
+<input id="em" type="email" placeholder="Email" autocomplete="username" required><input id="pw" type="password" placeholder="Password" autocomplete="current-password" required>
+<button class="btn">Sign in</button><button type="button" class="btn g" id="pkLogin">🔐 Sign in with Face ID / Passkey</button><div id="le" class="err"></div></form></div>
+<div id="app" class="hide"><div id="mobileNavShade" class="hide"></div><aside><div class="logo"><i>PF</i><div>PLATINUM<small>FLEET SYSTEM</small></div></div><nav id="nav"></nav></aside>
+<div><header><button id="mobileNavBtn" class="btn g" type="button" aria-label="Open navigation" style="display:none">☰</button><div><h1 id="pt">Dashboard</h1><p id="ps">Fleet overview</p></div><div class="sp"></div>
+<input type="date" id="d1"><input type="date" id="d2"><button class="btn g" id="rf">Refresh</button>
+<button class="btn g" id="bell" title="Open exceptions">Alerts <b id="bc">0</b></button><div><b>Ibrahim Sheta</b><p style="font-size:12px">System Administrator</p></div><button class="btn g" id="lo">Sign out</button></header><main id="v"></main></div></div>
+<div id="modal" class="hide"></div><div id="lb" class="hide"></div>
+<script>
+// ===== CONFIG: paste your project's ANON (public) key. Never the service-role key. =====
+const CFG={url:"https://wmkddjbufbeqntgdestb.supabase.co",anon:"sb_publishable_8SD1QzIeYEqDTsh45zSX7w_QMz6Weq4",adminEmail:"ibrahimsheta90@gmail.com",signFn:"admin-signed-url",tz:"Africa/Cairo",fallbackL100:10};
+const sb=supabase.createClient(CFG.url,CFG.anon,{auth:{experimental:{passkey:true}}});const $=s=>document.querySelector(s);
+(function(){const b=document.getElementById("mobileNavBtn"),a=document.querySelector("#app>aside"),sh=document.getElementById("mobileNavShade");if(!b||!a||!sh)return;function close(){a.classList.remove("mobile-open");sh.classList.add("hide")}b.addEventListener("click",()=>{const open=a.classList.toggle("mobile-open");sh.classList.toggle("hide",!open)});sh.addEventListener("click",close);a.addEventListener("click",e=>{if(e.target.closest("nav a"))setTimeout(close,80)});})();
+const P=[["dash","Dashboard"],["veh","Vehicles"],["drv","Drivers"],["fuel","Fuel Reports"],["cards","💳 Fuel Cards"],["trips","Trips"],["tolls","🛣️ Toll Fees"],["exp","Expenses"],["exc","Exceptions"],["rep","Reports"],["set","Settings"]];
+let D={},page="dash",charts=[],rtab="Daily";
+let fleetMap=null,fleetMarkers=[];
+const n=(x,d=0)=>x==null||isNaN(x)?"—":(+x).toLocaleString("en-US",{maximumFractionDigits:d});
+const fd=x=>x?new Date(x).toLocaleDateString("en-GB",{timeZone:CFG.tz,day:"2-digit",month:"short",year:"numeric"}):"—";
+const ft=x=>x?new Date(x).toLocaleTimeString("en-GB",{timeZone:CFG.tz,hour:"2-digit",minute:"2-digit"}):"—";
+const day=x=>x?new Date(x).toLocaleDateString("en-CA",{timeZone:CFG.tz}):"";
+const E=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const vm=()=>Object.fromEntries((D.veh||[]).map(v=>[v.id,v])),dm=()=>Object.fromEntries((D.drv||[]).map(v=>[v.id,v]));
+const tk=t=>t.total_km??(t.end_km!=null&&t.start_km!=null?t.end_km-t.start_km:null);
+const bad=s=>{s=String(s||"").toUpperCase();return/COMPLET|CLOSED|DONE|RESOLVED|^ACTIVE/.test(s)?"ok":/OPEN|PEND|WARN|IGNOR|INACTIVE/.test(s)?"wn":"rd"};
+const badge=s=>`<span class="b ${bad(s)}">${E(s||"—")}</span>`;
+const sevb=s=>`<span class="b ${/CRIT|HIGH/i.test(s)?"rd":/WARN|MED/i.test(s)?"wn":""}">${E(s)}</span>`;
+function tbl(cols,rows,attr){if(!rows.length)return'<div class="msg">No records for this range.</div>';
+return`<div class="tw"><table><thead><tr>${cols.map(c=>`<th>${c[0]}</th>`).join("")}</tr></thead><tbody>${rows.slice(0,200).map(r=>`<tr ${attr?attr(r):""}>${cols.map(c=>`<td>${c[1](r)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>${rows.length>200?`<div class="lb" style="padding:8px">Showing first 200 of ${rows.length}. Narrow the range or filters to see the rest.</div>`:""}`}
+function csv(name,head,rows){const q=x=>`"${String(x??"").replace(/"/g,'""')}"`;const b=new Blob(["\ufeff"+[head,...rows].map(r=>r.map(q).join(",")).join("\n")],{type:"text/csv"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name+".csv";a.click()}
+async function load(){const a=$("#d1").value,b=$("#d2").value;$("#v").innerHTML='<div class="msg">Loading…</div>';
+try{const rg=(q,c)=>q.gte(c,a+"T00:00:00+02:00").lte(c,b+"T23:59:59+03:00");
+const T=t=>sb.from(t).select("*");
+const r=await Promise.all([T("vehicles"),T("drivers"),rg(T("trips").is("deleted_at",null).order("created_at",{ascending:false}).limit(2000),"created_at"),rg(T("fuel_receipts").order("created_at",{ascending:false}).limit(2000),"created_at"),rg(T("exceptions").order("created_at",{ascending:false}).limit(2000),"created_at"),T("fuel_prices"),T("fuel_cards"),rg(T("toll_fees").order("created_at",{ascending:false}).limit(2000),"created_at"),T("expenses"),T("vehicle_documents"),rg(T("vehicle_locations").order("captured_at",{ascending:false}).limit(5000),"captured_at")]);
+const e=r.find(x=>x.error);if(e)throw e.error;[D.veh,D.drv,D.trips,D.fr,D.exc,D.prices,D.cards,D.tolls,D.expenses,D.docs,D.loc]=r.map(x=>x.data||[]);render()}
+catch(x){
+  const msg=String(x?.message||x);
+  if(/JWT issued at future|issued in the future|JWT/i.test(msg) && /future/i.test(msg)){
+    try{await sb.auth.signOut();}catch(_){}
+    $("#app").classList.add("hide");
+    $("#login").classList.remove("hide");
+    $("#le").textContent="Session expired or device time is out of sync. Please sign in again.";
+    return;
+  }
+  $("#v").innerHTML=`<div class="card msg err">Could not load data: ${E(msg)}</div>`;
+}}
+function kill(){charts.forEach(c=>c.destroy());charts=[]}
+function fuelOf(t){return D.fr.filter(f=>f.trip_id===t.id)}
+function render(){kill();$("#bc").textContent=D.exc.filter(e=>/OPEN/i.test(e.status)).length;$("#pt").textContent=(P.find(p=>p[0]==page)||[0,"Vehicles"])[1];$("#ps").textContent={dash:"Fleet overview",veh:"Vehicles and usage",fuel:"Fuel receipts",trips:"All trips in range",exc:"Issues needing review",rep:"Calculated from live data",drv:"Driver activity",exp:"Expense tracking",set:"Reference data",vd:"Vehicle details"}[page];
+document.querySelectorAll("#nav a").forEach(a=>a.classList.toggle("on",a.dataset.p==(page=="vd"?"veh":page)));$("#v").innerHTML=({dash,veh,drv,fuel,trips,exp,exc,rep,set,vd})[page]();(window["after_"+page]||(()=>{}))();
+document.querySelectorAll("tr[data-t]").forEach(r=>r.onclick=()=>openTrip(r.dataset.t));document.querySelectorAll("tr[data-v]").forEach(r=>r.onclick=()=>{VID=r.dataset.v;TAB="Overview";page="vd";render()});document.querySelectorAll("tr[data-e]").forEach(r=>r.onclick=()=>openExc(r.dataset.e));}
+function tripCols(){const V=vm(),R=dm();return[["Date",t=>fd(t.start_at||t.created_at)],["Trip",t=>E(t.trip_code)],["Vehicle",t=>E(V[t.vehicle_id]?.vehicle_code)],["Driver",t=>E(R[t.driver_id]?.name)],["Start KM",t=>n(t.start_km)],["End KM",t=>n(t.end_km)],["Trip KM",t=>n(tk(t),1)],["Fuel (L)",t=>n(fuelOf(t).reduce((s,f)=>s+(+f.liters||0),0),1)],["Fuel cost",t=>n(fuelOf(t).reduce((s,f)=>s+(+f.total_amount||0),0),2)],["Status",t=>badge(t.status)]]}
+const tAttr=t=>`data-t="${t.id}"`;
+function after_dash(){
+  const el=document.getElementById('fleetMap'); if(!el || typeof L==='undefined')return;
+  if(fleetMap){try{fleetMap.remove()}catch(_){} fleetMap=null; fleetMarkers=[];}
+  fleetMap=L.map(el,{zoomControl:true,attributionControl:true}).setView([30.0444,31.2357],6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(fleetMap);
+  const latest={};
+  (D.loc||[]).forEach(x=>{if(!latest[x.vehicle_id])latest[x.vehicle_id]=x});
+  const points=[];
+  (D.veh||[]).forEach(v=>{
+    const x=latest[v.id], dr=(D.drv||[]).find(d=>d.id===x?.driver_id), tr=(D.trips||[]).find(t=>t.id===x?.trip_id);
+    if(!x) return;
+    const age=(Date.now()-new Date(x.captured_at).getTime())/60000;
+    const moving=Number(x.speed_kmh||0)>5;
+    const state=age<=3?(moving?'Moving':'Stopped'):'Offline';
+    const cls=age<=3?(moving?'live':'stop'):'off';
+    const html='<div style="min-width:190px"><b>'+E(v.vehicle_code)+'</b><br>Driver: '+E(dr?.name||'—')+'<br>Trip: '+E(tr?.trip_code||'—')+'<br>Speed: '+n(x.speed_kmh,1)+' km/h<br>Accuracy: '+n(x.accuracy_m,0)+' m<br>Last update: '+ft(x.captured_at)+'<br><b>Status: '+state+'</b></div>';
+    const icon=L.divIcon({className:'fleetMarker',html:'<div style="width:16px;height:16px;border-radius:50%;background:'+(cls==='live'?'#35e0cf':cls==='stop'?'#f0b44c':'#73828a')+';border:3px solid #07121c;box-shadow:0 0 12px rgba(53,224,207,.45)"></div>',iconSize:[16,16],iconAnchor:[8,8]});
+    const m=L.marker([x.latitude,x.longitude],{icon}).addTo(fleetMap).bindPopup(html); fleetMarkers.push(m); points.push([x.latitude,x.longitude]);
+  });
+  if(points.length===1)fleetMap.setView(points[0],14); else if(points.length>1)fleetMap.fitBounds(points,{padding:[25,25]});
+  const lbl=document.getElementById('fleetLiveLabel'); if(lbl)lbl.textContent=Object.keys(latest).length+' vehicles • LIVE GPS';
+}
+function dash(){const T=D.trips,km=T.reduce((s,t)=>s+(+tk(t)||0),0),L=D.fr.reduce((s,f)=>s+(+f.liters||0),0),C=D.fr.reduce((s,f)=>s+(+f.total_amount||0),0),ox=D.exc.filter(e=>/OPEN/i.test(e.status)).length;
+const K=[["Total vehicles",D.veh.length,D.veh.filter(v=>v.active).length+" active"],["Active drivers",D.drv.filter(d=>d.active).length,D.drv.length+" total"],["Total KM",n(km),"in range"],["Total fuel",n(L,1)+" L","from receipts"],["Total fuel cost","EGP "+n(C),"from receipts"],["Exceptions",ox,"open in range"]];
+return`<div class="grid k6">${K.map(k=>`<div class="card"><div class="lb">${k[0]}</div><div class="kv">${k[1]}</div><div class="lb">${k[2]}</div></div>`).join("")}</div>
+<div class="grid c3" style="margin:14px 0"><div class="card"><h3>Daily KM &amp; fuel</h3><canvas id="c1" height="150"></canvas></div><div class="card"><h3>Fuel by vehicle (L)</h3><canvas id="c2" height="150"></canvas></div><div class="card"><h3>Trip status</h3><canvas id="c3" height="150"></canvas></div></div>
+<div class="card"><h3>Recent trips</h3>${tbl(tripCols(),T.slice(0,10),tAttr)}</div>`}
+function after_dash(){const Y={},V=vm();D.trips.forEach(t=>{const d=day(t.start_at||t.created_at);(Y[d]??={km:0,l:0}).km+=+tk(t)||0});D.fr.forEach(f=>{(Y[day(f.receipt_at||f.created_at)]??={km:0,l:0}).l+=+f.liters||0});
+const ds=Object.keys(Y).sort();const red="#d62828",gr="#9aa3b2";
+if(!ds.length)return;charts.push(new Chart($("#c1"),{data:{labels:ds,datasets:[{type:"line",label:"KM",data:ds.map(d=>Y[d].km),borderColor:red,yAxisID:"y",tension:.3},{type:"bar",label:"Fuel (L)",data:ds.map(d=>Y[d].l),backgroundColor:gr,yAxisID:"y1"}]},options:{scales:{y1:{position:"right",grid:{drawOnChartArea:false}}}}}));
+const F={};D.fr.forEach(f=>{const c=V[f.vehicle_id]?.vehicle_code||"?";F[c]=(F[c]||0)+(+f.liters||0)});charts.push(new Chart($("#c2"),{type:"bar",data:{labels:Object.keys(F),datasets:[{label:"Fuel (L)",data:Object.values(F),backgroundColor:red}]},options:{plugins:{legend:{display:false}}}}));
+const S={};D.trips.forEach(t=>{const s=t.status||"—";S[s]=(S[s]||0)+1});charts.push(new Chart($("#c3"),{type:"doughnut",data:{labels:Object.keys(S),datasets:[{data:Object.values(S),backgroundColor:["#15803d","#d97706","#d62828","#9aa3b2","#101827"]}]},options:{cutout:"65%"}}))}
+function trips0(){return`<div class="card">${tbl(tripCols(),D.trips,tAttr)}</div>`}
+function veh(){const R=dm(),st=v=>{const ts=D.trips.filter(t=>t.vehicle_id==v.id),f=D.fr.filter(x=>x.vehicle_id==v.id);return{km:ts.reduce((s,t)=>s+(+tk(t)||0),0),l:f.reduce((s,x)=>s+(+x.liters||0),0),c:f.reduce((s,x)=>s+(+x.total_amount||0),0),t:ts.length}};
+return`<div class="card">${tbl([["Code",v=>E(v.vehicle_code)],["Plate",v=>E(v.plate_number)],["Make / model",v=>E([v.make,v.model,v.model_year].filter(Boolean).join(" "))],["Fuel",v=>E(v.fuel_type)],["L/100km",v=>n(v.consumption_l_per_100km,1)],["Driver",v=>E((D.drv.find(d=>d.vehicle_id==v.id)||{}).name)],["Trips",v=>st(v).t],["KM",v=>n(st(v).km)],["Fuel (L)",v=>n(st(v).l,1)],["Cost",v=>n(st(v).c,2)],["Status",v=>badge(v.active?"Active":"Inactive")]],D.veh,v=>`data-v="${v.id}"`)}</div>`}
+function fuel0(){const F=D.fr,L=F.reduce((s,f)=>s+(+f.liters||0),0),C=F.reduce((s,f)=>s+(+f.total_amount||0),0),cs=F.filter(f=>f.receipt_consumption_l_per_100km!=null),V=vm(),R=dm();
+const K=[["Total liters",n(L,1)],["Total cost","EGP "+n(C,2)],["Avg price/liter",L?n(C/L,2):"—"],["Avg consumption",cs.length?n(cs.reduce((s,f)=>s+ +f.receipt_consumption_l_per_100km,0)/cs.length,1)+" L/100km":"—"]];
+return`<div class="grid k6">${K.map(k=>`<div class="card"><div class="lb">${k[0]}</div><div class="kv">${k[1]}</div></div>`).join("")}</div><div class="card" style="margin-top:14px">${tbl([["Date",f=>fd(f.receipt_at||f.created_at)],["Vehicle",f=>E(V[f.vehicle_id]?.vehicle_code)],["Driver",f=>E(R[f.driver_id]?.name)],["Fuel",f=>E(f.fuel_type)],["Liters",f=>n(f.liters,2)],["Price/L",f=>n(f.price_per_liter,2)],["Total",f=>n(f.total_amount,2)],["Station",f=>E(f.station_name)],["Receipt #",f=>E(f.receipt_number)],["Prev KM",f=>n(f.previous_km)],["Actual KM",f=>n(f.actual_km)],["L/100km",f=>n(f.receipt_consumption_l_per_100km,1)],["Images",f=>f.trip_id?`<a href="#" onclick="openTrip('${f.trip_id}');return false" style="color:var(--red)">View</a>`:"—"]],F)}</div>`}
+function exc0(){const V=vm(),R=dm(),T=Object.fromEntries(D.trips.map(t=>[t.id,t]));return`<div class="card">${tbl([["Created",e=>fd(e.created_at)+" "+ft(e.created_at)],["Type",e=>E(e.exception_type)],["Severity",e=>sevb(e.severity)],["Vehicle",e=>E(V[e.vehicle_id]?.vehicle_code)],["Driver",e=>E(R[e.driver_id]?.name)],["Trip",e=>E(T[e.trip_id]?.trip_code)],["Description",e=>E(e.description)],["Status",e=>badge(e.status)]],D.exc,e=>`data-e="${e.id}"`)}</div>`}
+function repRows(){const g={};const key={Daily:x=>day(x),Weekly:x=>{const d=new Date(x),m=new Date(d.getTime()-((d.getUTCDay()+6)%7)*864e5);return"Week of "+day(m)},Monthly:x=>day(x).slice(0,7),"By Vehicle":null,"By Driver":null}[rtab],V=vm(),R=dm();
+const ks=(t)=>key?key(t.start_at||t.created_at):rtab=="By Vehicle"?V[t.vehicle_id]?.vehicle_code:R[t.driver_id]?.name;
+D.trips.forEach(t=>{const k=ks(t)||"—";const r=g[k]??={k,trips:0,km:0,exp:0,act:0,cost:0,ex:0};const v=V[t.vehicle_id],f=fuelOf(t);r.trips++;const km=+tk(t)||0;r.km+=km;r.exp+=km*(+v?.consumption_l_per_100km||CFG.fallbackL100)/100;r.act+=f.reduce((s,x)=>s+(+x.liters||0),0);r.cost+=f.reduce((s,x)=>s+(+x.total_amount||0),0)});
+D.exc.forEach(e=>{const t=D.trips.find(t=>t.id==e.trip_id);const k=(t?ks(t):key?key(e.created_at):rtab=="By Vehicle"?V[e.vehicle_id]?.vehicle_code:R[e.driver_id]?.name)||"—";if(g[k])g[k].ex++});
+return Object.values(g).sort((a,b)=>String(b.k).localeCompare(a.k))}
+function rep(){const r=repRows();return`<div class="tabs">${["Daily","Weekly","Monthly","By Vehicle","By Driver"].map(t=>`<button class="${t==rtab?"on":""}" onclick="rtab='${t}';render()">${t}</button>`).join("")}<span class="sp"></span><button class="btn g" onclick="exportRep()">Export CSV</button><button class="btn g" onclick="exportRep(1)">Export Excel</button><button class="btn" onclick="print()">Print / PDF</button></div><div class="card">${tbl([["Period",x=>E(x.k)],["Trips",x=>x.trips],["KM",x=>n(x.km)],["Expected fuel (L)",x=>n(x.exp,1)],["Actual fuel (L)",x=>n(x.act,1)],["Difference (L)",x=>`<b style="color:${x.act-x.exp>x.exp*.15?"#b91c1c":"inherit"}">${n(x.act-x.exp,1)}</b>`],["Fuel cost",x=>n(x.cost,2)],["Avg L/100km",x=>x.km?n(x.act/x.km*100,1):"—"],["Exceptions",x=>x.ex]],r)}</div>`}
+window.exportRep=x=>(x?xls:csv)("report-"+rtab,["Period","Trips","KM","Expected L","Actual L","Diff L","Cost","Avg L/100km","Exceptions"],repRows().map(x=>[x.k,x.trips,x.km,x.exp.toFixed(1),x.act.toFixed(1),(x.act-x.exp).toFixed(1),x.cost.toFixed(2),x.km?(x.act/x.km*100).toFixed(1):"",x.ex]));
+let VID,TAB="Overview",FL={};
+const wrap=(k,f,fn)=>{const a=D[k];D[k]=a.filter(f);try{return fn()}finally{D[k]=a}};
+const flt=(k,l,o)=>`<select onchange="FL['${k}']=this.value;render()"><option value="">${l}</option>${[...new Set(o.filter(Boolean))].sort().map(x=>`<option ${FL[k]==x?"selected":""}>${E(x)}</option>`).join("")}</select>`;
+const bar=(...a)=>`<div class="fl">${a.join("")}<button class="btn g" onclick="FL={};render()">Clear</button></div>`;
+const vN=()=>flt("v","Vehicle",D.veh.map(x=>x.vehicle_code)),dN=()=>flt("d","Driver",D.drv.map(x=>x.name));
+function fuel(){const V=vm(),R=dm();return bar(vN(),dN(),flt("ft","Fuel type",D.fr.map(x=>x.fuel_type)),flt("s","Station",D.fr.map(x=>x.station_name)))+wrap("fr",f=>(!FL.v||V[f.vehicle_id]?.vehicle_code==FL.v)&&(!FL.d||R[f.driver_id]?.name==FL.d)&&(!FL.ft||f.fuel_type==FL.ft)&&(!FL.s||f.station_name==FL.s),fuel0)}
+function trips(){const V=vm(),R=dm();return bar(flt("st","Status",D.trips.map(t=>t.status)),vN(),dN())+wrap("trips",t=>(!FL.st||t.status==FL.st)&&(!FL.v||V[t.vehicle_id]?.vehicle_code==FL.v)&&(!FL.d||R[t.driver_id]?.name==FL.d),trips0)}
+function exc(){return bar(flt("st","Status",D.exc.map(e=>e.status)),flt("ty","Type",D.exc.map(e=>e.exception_type)),flt("sv","Severity",D.exc.map(e=>e.severity)))+wrap("exc",e=>(!FL.st||e.status==FL.st)&&(!FL.ty||e.exception_type==FL.ty)&&(!FL.sv||e.severity==FL.sv),exc0)}
+const sum=(a,f)=>a.reduce((s,x)=>s+(+f(x)||0),0);
+function drv(){const V=vm();return`<div class="card">${tbl([["Code",d=>E(d.driver_code)],["Name",d=>E(d.name)],["Phone",d=>E(d.phone)],["Vehicle",d=>E(V[d.vehicle_id]?.vehicle_code)],["Trips",d=>D.trips.filter(t=>t.driver_id==d.id).length],["KM",d=>n(sum(D.trips.filter(t=>t.driver_id==d.id),tk))],["Fuel (L)",d=>n(sum(D.fr.filter(f=>f.driver_id==d.id),f=>f.liters),1)],["Exceptions",d=>D.exc.filter(e=>e.driver_id==d.id).length],["Status",d=>badge(d.active?"Active":"Inactive")]],D.drv)}</div>`}
+const NOTE=t=>`<div class="card msg">${t}</div>`;
+function exp(){return NOTE("The current database has no expenses table, so there is nothing to display. See PENDING_BACKEND_CHANGES.md.")}
+function set(){return`<div class="grid k6"><div class="card"><div class="lb">Admin</div><b>${E(CFG.adminEmail)}</b></div><div class="card"><div class="lb">Timezone</div><b>${CFG.tz}</b></div><div class="card"><div class="lb">Fallback consumption</div><b>${CFG.fallbackL100} L/100km</b><div class="lb">Used only when a vehicle has no value</div></div></div><div class="card" style="margin-top:14px"><h3>Fuel prices</h3>${tbl([["Fuel type",p=>E(p.fuel_type)],["Price/L",p=>n(p.price_per_liter,2)],["From",p=>fd(p.effective_from)],["To",p=>fd(p.effective_to)],["Status",p=>badge(p.active?"Active":"Inactive")]],D.prices)}</div>`}
+function vd(){const v=vm()[VID];if(!v)return NOTE("Vehicle not found.");const ts=D.trips.filter(t=>t.vehicle_id==VID),f=D.fr.filter(x=>x.vehicle_id==VID),L=sum(f,x=>x.liters),km=sum(ts,tk),dr=D.drv.find(d=>d.vehicle_id==VID);
+const c=(a,b)=>`<div class="card"><div class="lb">${a}</div><div class="kv" style="font-size:18px">${b}</div></div>`;
+const T={Overview:`<div class="grid k6">${[["Vehicle code",E(v.vehicle_code)],["Plate",E(v.plate_number)],["Make",E(v.make||"—")],["Model",E(v.model||"—")],["Model year",v.model_year||"—"],["Fuel type",E(v.fuel_type)],["Consumption rate",n(v.consumption_l_per_100km,1)+" L/100km"],["Assigned driver",E(dr?.name||"—")],["Status",badge(v.active?"Active":"Inactive")]].map(a=>c(...a)).join("")}</div>`,Trips:`<div class="card">${tbl(tripCols(),ts,tAttr)}</div>`,Fuel:wrap("fr",x=>x.vehicle_id==VID,fuel0),Expenses:exp(),Documents:NOTE("Photos and receipts are stored per trip and appear in each trip's details. The database has no separate documents table.")};
+return`<button class="btn g" onclick="page='veh';render()">Back to vehicles</button><div class="grid k6" style="margin:14px 0">${[["Total KM (range)",n(km)],["Avg fuel consumption",km?n(L/km*100,1)+" L/100km":"—"],["Total fuel",n(L,1)+" L"],["Total fuel cost","EGP "+n(sum(f,x=>x.total_amount),2)],["Total trips",ts.length]].map(a=>c(...a)).join("")}</div><div class="tabs">${Object.keys(T).map(t=>`<button class="${t==TAB?"on":""}" onclick="TAB='${t}';render()">${t}</button>`).join("")}</div>${T[TAB]}`}
+window.openExc=id=>{const e=D.exc.find(x=>x.id==id);if(!e)return;const V=vm()[e.vehicle_id],R=dm()[e.driver_id],t=D.trips.find(x=>x.id==e.trip_id),o=D.exc.filter(x=>x.trip_id&&x.trip_id==e.trip_id&&x.id!=e.id).length,m=$("#modal"),kv=(a,b)=>`<div><div class="lb">${a}</div><b>${b}</b></div>`;m.classList.remove("hide");m.onclick=ev=>{if(ev.target==m)m.classList.add("hide")};
+m.innerHTML=`<div><div style="display:flex;justify-content:space-between"><h2 style="margin:0">${E(e.exception_type)} ${sevb(e.severity)} ${badge(e.status)}</h2><button class="btn g" onclick="$('#modal').classList.add('hide')">Close</button></div><div class="grid k6" style="margin:14px 0">${kv("Created",fd(e.created_at)+" "+ft(e.created_at))}${kv("Resolved",e.resolved_at?fd(e.resolved_at)+" "+ft(e.resolved_at):"—")}${kv("Vehicle",E((V?.vehicle_code||"—")+" "+(V?.plate_number||"")))}${kv("Driver",E(R?.name||"—"))}${kv("Trip",E(t?.trip_code||"—"))}${kv("Trip KM",t?n(tk(t),1):"—")}${kv("Other exceptions on trip",o)}</div><p dir="auto">${E(e.description||"No description.")}</p>${t?`<button class="btn" onclick="openTrip('${t.id}')">Open trip and photos</button>`:""}<p class="lb">Resolving or ignoring an exception needs write access and is pending review.</p></div>`};
+function xls(name,head,rows){const t=`<html><meta charset="utf-8"><table>${[head,...rows].map(r=>`<tr>${r.map(c=>`<td>${E(c)}</td>`).join("")}</tr>`).join("")}</table></html>`;const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([t],{type:"application/vnd.ms-excel"}));a.download=name+".xls";a.click()}
+const norm=p=>p?(p.includes("/fleet-photos/")?p.split("/fleet-photos/")[1].split("?")[0]:p.replace(/^fleet-photos\//,"")):null;
+async function sign(paths){paths=[...new Set(paths.filter(Boolean))];if(!paths.length)return{};const{data:{session}}=await sb.auth.getSession();
+const r=await fetch(`${CFG.url}/functions/v1/${CFG.signFn}`,{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token,apikey:CFG.anon},body:JSON.stringify({paths})});if(!r.ok)throw new Error("Signed URL service returned "+r.status);return(await r.json()).urls}
+window.openTrip=async id=>{const t=D.trips.find(x=>x.id==id);const m=$("#modal");m.classList.remove("hide");m.onclick=e=>{if(e.target==m)m.classList.add("hide")};
+if(!t){m.innerHTML='<div><p class="msg">Trip is outside the selected date range.</p></div>';return}
+const V=vm()[t.vehicle_id],Dr=dm()[t.driver_id],f=fuelOf(t),fl=f.reduce((s,x)=>s+(+x.liters||0),0),fc=f.reduce((s,x)=>s+(+x.total_amount||0),0);
+const kv=(a,b)=>`<div><div class="lb">${a}</div><b>${b}</b></div>`;
+m.innerHTML=`<div><div style="display:flex;justify-content:space-between"><h2 style="margin:0">Trip ${E(t.trip_code)} ${badge(t.status)}</h2><button class="btn g" onclick="$('#modal').classList.add('hide')">Close</button></div>
+<div class="grid k6" style="margin:14px 0">${kv("Date",fd(t.start_at||t.created_at))}${kv("Driver",E(Dr?.name||"—"))}${kv("Vehicle",E(V?.vehicle_code||"—"))}${kv("Start KM",n(t.start_km))}${kv("End KM",n(t.end_km))}${kv("Trip KM",n(tk(t),1))}${kv("Calculated liters",n(t.calculated_liters,1))}${kv("Fuel cost (calc.)",n(t.calculated_fuel_cost,2))}${kv("Fuel receipts (L / EGP)",n(fl,1)+" / "+n(fc,2))}${kv("Start",ft(t.start_at))}${kv("End",ft(t.end_at))}</div><div id="im" class="msg">Loading images…</div></div>`;
+const{data:od,error}=await sb.from("odometer_readings").select("*").eq("trip_id",t.id);const im=[];
+(od||[]).forEach(o=>im.push([/start|open/i.test(o.reading_type)?"Start odometer":/end|close/i.test(o.reading_type)?"End odometer":"Odometer ("+o.reading_type+")",o.image_url,o.reading_km!=null?n(o.reading_km)+" km":""]));
+f.forEach(x=>[["Fuel before",x.fuel_before_image_url],["Fuel after",x.fuel_after_image_url],["Pump",x.pump_image_url],["Fuel receipt",x.image_url]].forEach(a=>im.push([a[0],a[1],x.receipt_number||""])));
+try{const u=await sign(im.map(i=>norm(i[1])));$("#im").className="ims";$("#im").innerHTML=im.length?im.map(i=>{const s=u[norm(i[1])];return`<figure><b>${i[0]}</b> <span class="lb">${E(i[2])}</span>${s?`<img src="${s}" onclick="zoom('${s}')"><a href="${s}" download target="_blank">Download</a>`:'<div class="msg">No image</div>'}</figure>`}).join(""):'<div class="msg">No images recorded for this trip.</div>'}
+catch(x){$("#im").className="msg err";$("#im").textContent="Images unavailable: "+x.message+(error?" / "+error.message:"")}};
+window.zoom=s=>{$("#lb").innerHTML=`<img src="${s}">`;$("#lb").classList.remove("hide")};$("#lb").onclick=()=>$("#lb").classList.add("hide");
+$("#nav").innerHTML=P.map(p=>`<a data-p="${p[0]}">${p[1]}</a>`).join("");$("#nav").onclick=e=>{if(e.target.dataset.p){page=e.target.dataset.p;FL={};render()}};
+$("#rf").onclick=load;$("#bell").onclick=()=>{page="exc";FL={};render()};$("#d1").onchange=$("#d2").onchange=load;
+async function enter(s){if(s?.user?.email!==CFG.adminEmail){await sb.auth.signOut();$("#le").textContent="This account is not an authorized admin.";return}
+$("#login").classList.add("hide");$("#app").classList.remove("hide");const now=new Date();$("#d2").value=day(now);$("#d1").value=day(new Date(now-30*864e5));load()}
+$("#lf").onsubmit=async e=>{e.preventDefault();$("#le").textContent="";const{data,error}=await sb.auth.signInWithPassword({email:$("#em").value,password:$("#pw").value});error?$("#le").textContent=error.message:enter(data.session)};
+async function passkeyLogin(){
+  $("#le").textContent="Checking Face ID / Passkey…";
+  try{
+    if(!window.PublicKeyCredential) throw new Error("This device or browser does not support Passkey / Face ID.");
+    const {data,error}=await sb.auth.signInWithPasskey();
+    if(error) throw error;
+    await enter(data.session);
+  }catch(e){ $("#le").textContent=e?.message||"Face ID / Passkey sign-in failed."; }
+}
+$("#pkLogin").onclick=passkeyLogin;
+$("#lo").onclick=async()=>{await sb.auth.signOut();location.reload()};
+sb.auth.getSession().then(({data})=>data.session&&enter(data.session));
+
+// ===== V4 ADMIN CONTROLS =====
+const ADMIN_FN="admin-write";
+async function adminWrite(action,payload={}){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session) throw new Error("Session expired. Please sign in again.");
+  const r=await fetch(`${CFG.url}/functions/v1/${ADMIN_FN}`,{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token,apikey:CFG.anon},body:JSON.stringify({action,...payload})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok||j.error) throw new Error(j.error||`Admin service returned ${r.status}`);
+  return j;
+}
+function escAttr(x){return E(x).replace(/'/g,"&#39;")}
+function tripEditor(id){
+ const t=D.trips.find(x=>x.id===id); if(!t)return;
+ const V=vm(),R=dm(),m=$("#modal"); m.classList.remove("hide");
+ m.innerHTML=`<div><div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><h2 style="margin:0">Edit Trip ${E(t.trip_code)}</h2><button class="btn g" onclick="$('#modal').classList.add('hide')">Close</button></div>
+ <form id="tef" style="display:grid;gap:12px;margin-top:16px">
+ <div class="grid k6"><label>Vehicle<select id="tev">${D.veh.map(v=>`<option value="${v.id}" ${v.id===t.vehicle_id?'selected':''}>${E(v.vehicle_code)} — ${E(v.plate_number||'')}</option>`).join('')}</select></label>
+ <label>Driver<select id="ted">${D.drv.map(d=>`<option value="${d.id}" ${d.id===t.driver_id?'selected':''}>${E(d.name)}</option>`).join('')}</select></label>
+ <label>Status<select id="tes">${['OPEN','CLOSED','PENDING','CANCELLED','EXCEPTION'].map(x=>`<option ${x===t.status?'selected':''}>${x}</option>`).join('')}</select></label>
+ <label>Start KM<input id="tesk" type="number" min="0" step="1" value="${t.start_km??''}" required></label>
+ <label>End KM<input id="teek" type="number" min="0" step="1" value="${t.end_km??''}></label>
+ <label>Start time<input id="tesa" type="datetime-local" value="${t.start_at?new Date(t.start_at).toISOString().slice(0,16):''}"></label>
+ <label>End time<input id="teea" type="datetime-local" value="${t.end_at?new Date(t.end_at).toISOString().slice(0,16):''}"></label></div>
+ <div id="teerr" class="err"></div><div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn g" onclick="showTripAudit('${t.id}')">Audit Log</button><button class="btn">Save Changes</button></div></form></div>`;
+ $("#tef").onsubmit=async e=>{e.preventDefault();$("#teerr").textContent="Saving…";try{
+   const payload={id:t.id,vehicle_id:$("#tev").value,driver_id:$("#ted").value,status:$("#tes").value,start_km:Number($("#tesk").value),end_km:$("#teek").value===''?null:Number($("#teek").value),start_at:$("#tesa").value?new Date($("#tesa").value).toISOString():null,end_at:$("#teea").value?new Date($("#teea").value).toISOString():null};
+   await adminWrite("update_trip",payload);m.classList.add('hide');await 
+load();openTrip(t.id);
+ }catch(x){$("#teerr").textContent=x.message||String(x)}};
+}
+async function confirmDeleteTrip(id){const t=D.trips.find(x=>x.id===id);if(!t)return;if(!confirm(`Soft delete trip ${t.trip_code}?\nThe trip will be hidden from normal lists and can be restored by Admin.`))return;try{await adminWrite('delete_trip',{id});$("#modal").classList.add('hide');await load()}catch(x){alert(x.message||x)}}
+async function restoreTrip(id){try{await adminWrite('restore_trip',{id});$("#modal").classList.add('hide');await load()}catch(x){alert(x.message||x)}}
+async function showTripAudit(id){
+ const m=$("#modal");m.classList.remove('hide');m.innerHTML='<div><div style="display:flex;justify-content:space-between"><h2 style="margin:0">Audit Log</h2><button class="btn g" onclick="$(\'#modal\').classList.add(\'hide\')">Close</button></div><div class="msg">Loading…</div></div>';
+ const {data,error}=await sb.from('audit_log').select('*').eq('table_name','trips').eq('record_id',id).order('created_at',{ascending:false}).limit(200);
+ if(error){m.querySelector('.msg').className='msg err';m.querySelector('.msg').textContent=error.message;return}
+ const rows=data||[];m.querySelector('.msg').outerHTML=rows.length?tbl([["Date / Time",a=>fd(a.created_at)+' '+ft(a.created_at)],["User",a=>E(a.actor_email)],["Action",a=>E(a.action)],["Field",a=>E(a.field_name||'—')],["Old",a=>E(a.old_value==null?'—':JSON.stringify(a.old_value))],["New",a=>E(a.new_value==null?'—':JSON.stringify(a.new_value))]],rows):'<div class="msg">No audit records.</div>';
+}
+function newTrip(){
+ const m=$("#modal");m.classList.remove('hide');m.innerHTML=`<div><div style="display:flex;justify-content:space-between"><h2 style="margin:0">Add Trip</h2><button class="btn g" onclick="$('#modal').classList.add('hide')">Close</button></div><form id="ntf" style="display:grid;gap:12px;margin-top:16px"><div class="grid k6">
+ <label>Vehicle<select id="ntv" required>${D.veh.map(v=>`<option value="${v.id}">${E(v.vehicle_code)} — ${E(v.plate_number||'')}</option>`).join('')}</select></label>
+ <label>Driver<select id="ntd" required>${D.drv.map(d=>`<option value="${d.id}">${E(d.name)}</option>`).join('')}</select></label>
+ <label>Status<select id="nts">${['OPEN','CLOSED','PENDING','EXCEPTION'].map(x=>`<option>${x}</option>`).join('')}</select></label>
+ <label>Start KM<input id="ntsk" type="number" min="0" step="1" required></label><label>End KM<input id="ntek" type="number" min="0" step="1"></label>
+ <label>Start time<input id="ntsa" type="datetime-local" required></label><label>End time<input id="ntea" type="datetime-local"></label></div><div id="nterr" class="err"></div><div style="text-align:right"><button class="btn">Create Trip</button></div></form></div>`;
+ $("#ntf").onsubmit=async e=>{e.preventDefault();$("#nterr").textContent='Saving…';try{await adminWrite('create_trip',{vehicle_id:$("#ntv").value,driver_id:$("#ntd").value,status:$("#nts").value,start_km:Number($("#ntsk").value),end_km:$("#ntek").value===''?null:Number($("#ntek").value),start_at:new Date($("#ntsa").value).toISOString(),end_at:$("#ntea").value?new Date($("#ntea").value).toISOString():null});m.classList.add('hide');await load()}catch(x){$("#nterr").textContent=x.message||String(x)}};
+}
+const oldTrips0=trips0;
+trips0=function(){return `<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn" onclick="newTrip()">+ Add Trip</button></div>`+oldTrips0()}
+const oldOpenTrip=window.openTrip;
+window.openTrip=async id=>{await oldOpenTrip(id);const t=D.trips.find(x=>x.id===id);if(!t)return;const box=$("#modal>div");if(!box)return;const head=box.firstElementChild;if(head){const actions=document.createElement('div');actions.style='display:flex;gap:8px;margin-top:12px;justify-content:flex-end';actions.innerHTML=`<button class="btn g" onclick="tripEditor('${escAttr(id)}')">Edit Trip</button><button class="btn g" onclick="showTripAudit('${escAttr(id)}')">Audit Log</button><button class="btn" onclick="confirmDeleteTrip('${escAttr(id)}')">Delete Trip</button>`;box.appendChild(actions)}};
+
+
+async function refreshGpsOnly(){
+  try{
+    const r=await sb.from('vehicle_locations').select('*').order('captured_at',{ascending:false}).limit(5000);
+    if(r.error)throw r.error;
+    D.loc=r.data||[];
+    if(page==='dash' && document.getElementById('fleetMap')) renderFleetMap();
+  }catch(e){ const el=document.getElementById('fleetLiveLabel'); if(el)el.textContent='GPS unavailable'; }
+}
+function renderFleetMap(){
+  const el=document.getElementById('fleetMap'); if(!el || typeof L==='undefined')return;
+  if(fleetMap){try{fleetMap.remove()}catch(_){} fleetMap=null; fleetMarkers=[];}
+  fleetMap=L.map(el,{zoomControl:true,attributionControl:true}).setView([30.0444,31.2357],6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(fleetMap);
+  const latest={}; (D.loc||[]).forEach(x=>{if(!latest[x.vehicle_id])latest[x.vehicle_id]=x});
+  const points=[];
+  (D.veh||[]).forEach(v=>{const x=latest[v.id]; if(!x)return; const dr=(D.drv||[]).find(d=>d.id===x.driver_id); const tr=(D.trips||[]).find(t=>t.id===x.trip_id); const age=(Date.now()-new Date(x.captured_at).getTime())/60000; const moving=Number(x.speed_kmh||0)>5; const state=age<=3?(moving?'Moving':'Stopped'):'Offline'; const cls=age<=3?(moving?'live':'stop'):'off'; const html='<div style=\"min-width:190px\"><b>'+E(v.vehicle_code)+'</b><br>Driver: '+E(dr?.name||'—')+'<br>Trip: '+E(tr?.trip_code||'—')+'<br>Speed: '+n(x.speed_kmh,1)+' km/h<br>Accuracy: '+n(x.accuracy_m,0)+' m<br>Last update: '+ft(x.captured_at)+'<br><b>Status: '+state+'</b></div>'; const icon=L.divIcon({className:'fleetMarker',html:'<div style=\"width:16px;height:16px;border-radius:50%;background:'+(cls==='live'?'#35e0cf':cls==='stop'?'#f0b44c':'#73828a')+';border:3px solid #07121c\"></div>',iconSize:[16,16],iconAnchor:[8,8]}); L.marker([x.latitude,x.longitude],{icon}).addTo(fleetMap).bindPopup(html); points.push([x.latitude,x.longitude]);});
+  if(points.length===1)fleetMap.setView(points[0],14); else if(points.length>1)fleetMap.fitBounds(points,{padding:[25,25]});
+  const lbl=document.getElementById('fleetLiveLabel'); if(lbl)lbl.textContent=Object.keys(latest).length+' vehicles • LIVE GPS';
+}
+/* ===== V7 UI OVERRIDES / NEW PAGES ===== */
+function after_dash(){
+  const el=document.getElementById('fleetMap'); if(!el || typeof L==='undefined')return;
+  if(fleetMap){try{fleetMap.remove()}catch(_){} fleetMap=null; fleetMarkers=[];}
+  fleetMap=L.map(el,{zoomControl:true,attributionControl:true}).setView([30.0444,31.2357],6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(fleetMap);
+  const latest={};
+  (D.loc||[]).forEach(x=>{if(!latest[x.vehicle_id])latest[x.vehicle_id]=x});
+  const points=[];
+  (D.veh||[]).forEach(v=>{
+    const x=latest[v.id], dr=(D.drv||[]).find(d=>d.id===x?.driver_id), tr=(D.trips||[]).find(t=>t.id===x?.trip_id);
+    if(!x) return;
+    const age=(Date.now()-new Date(x.captured_at).getTime())/60000;
+    const moving=Number(x.speed_kmh||0)>5;
+    const state=age<=3?(moving?'Moving':'Stopped'):'Offline';
+    const cls=age<=3?(moving?'live':'stop'):'off';
+    const html='<div style="min-width:190px"><b>'+E(v.vehicle_code)+'</b><br>Driver: '+E(dr?.name||'—')+'<br>Trip: '+E(tr?.trip_code||'—')+'<br>Speed: '+n(x.speed_kmh,1)+' km/h<br>Accuracy: '+n(x.accuracy_m,0)+' m<br>Last update: '+ft(x.captured_at)+'<br><b>Status: '+state+'</b></div>';
+    const icon=L.divIcon({className:'fleetMarker',html:'<div style="width:16px;height:16px;border-radius:50%;background:'+(cls==='live'?'#35e0cf':cls==='stop'?'#f0b44c':'#73828a')+';border:3px solid #07121c;box-shadow:0 0 12px rgba(53,224,207,.45)"></div>',iconSize:[16,16],iconAnchor:[8,8]});
+    const m=L.marker([x.latitude,x.longitude],{icon}).addTo(fleetMap).bindPopup(html); fleetMarkers.push(m); points.push([x.latitude,x.longitude]);
+  });
+  if(points.length===1)fleetMap.setView(points[0],14); else if(points.length>1)fleetMap.fitBounds(points,{padding:[25,25]});
+  const lbl=document.getElementById('fleetLiveLabel'); if(lbl)lbl.textContent=Object.keys(latest).length+' vehicles • LIVE GPS';
+}
+function dash(){
+ const T=D.trips||[], km=T.reduce((s,t)=>s+(+tk(t)||0),0), L=(D.fr||[]).reduce((s,f)=>s+(+f.liters||0),0), C=(D.fr||[]).reduce((s,f)=>s+(+f.total_amount||0),0), ox=(D.exc||[]).filter(e=>/OPEN/i.test(e.status)).length;
+ const toll=(D.tolls||[]).reduce((s,x)=>s+(+x.amount||0),0), active=(D.veh||[]).filter(v=>v.active).length;
+ const recent=T.slice(0,5);
+ return `<div class="grid k6">
+ <div class="card"><div class="lb">Active Vehicles</div><div class="kv">${active}/${D.veh.length}</div><div class="lb">Fleet</div></div>
+ <div class="card"><div class="lb">Drivers</div><div class="kv">${D.drv.filter(d=>d.active).length}</div><div class="lb">Active</div></div>
+ <div class="card"><div class="lb">Total KM</div><div class="kv">${n(km)}</div><div class="lb">In selected period</div></div>
+ <div class="card"><div class="lb">Fuel</div><div class="kv accent">${n(L,1)} L</div><div class="lb">From receipts</div></div>
+ <div class="card"><div class="lb">Toll Fees</div><div class="kv blue">EGP ${n(toll,2)}</div><div class="lb">In selected period</div></div>
+ <div class="card"><div class="lb">Open Alerts</div><div class="kv ${ox?'warn':''}">${ox}</div><div class="lb">Needs review</div></div></div>
+ <div class="v7dash">
+  <div class="card v7map"><div class="v7maptitle"><b>🚚 Fleet Tracking</b><span id="fleetLiveLabel">LIVE GPS</span></div><div id="fleetMap"></div><div class="fleetOverlay"><div class="fleetLegend"><span><i class="fleetDot live"></i> Moving</span><span><i class="fleetDot stop"></i> Stopped</span><span><i class="fleetDot off"></i> Offline</span></div></div></div>
+  <div class="v7side">
+   <div class="card"><h3>Fleet Status</h3><div class="gauge"><div class="gaugeItem"><div class="ring"><b>${active}</b></div><div class="glabel">Active</div></div><div class="gaugeItem"><div class="ring"><b>${D.trips.filter(t=>/OPEN/i.test(t.status)).length}</b></div><div class="glabel">On Trip</div></div><div class="gaugeItem"><div class="ring"><b>${ox}</b></div><div class="glabel">Alerts</div></div></div></div>
+   <div class="card"><h3>Latest Alerts</h3>${(D.exc||[]).slice(0,4).map(e=>`<div class="alertRow"><span class="dot ${/CRIT|HIGH/i.test(e.severity)?'red':''}"></span><b>${E(e.exception_type||'Exception')}</b><div class="lb">${E(e.description||'')}</div></div>`).join('')||'<div class="msg">No alerts</div>'}</div>
+  </div>
+ </div>
+ <div class="v7bottom">
+  <div class="card"><h3>Recent Trips</h3>${tbl(tripCols(),recent,tAttr)}</div>
+  <div class="card"><h3>Operating Cost Analysis</h3><div class="miniStat"><span>Fuel Cost</span><strong>EGP ${n(C,2)}</strong></div><div class="miniStat"><span>Toll Fees</span><strong class="blue">EGP ${n(toll,2)}</strong></div><div class="miniStat"><span>Direct Operating Cost</span><strong class="accent">EGP ${n(C+toll,2)}</strong></div><div class="miniStat"><span>Average Consumption</span><strong>${km?n(L/km*100,1):'—'} L/100km</strong></div></div>
+ </div>`;
+}
+function cards(){
+ const V=vm(),R=dm(), rows=D.cards||[];
+ return `<div class="fl"><button class="btn" onclick="alert('Add Fuel Card — admin-write integration pending')">+ Add Card</button><span class="lb" style="align-self:center">Cards are independent assets and can be reassigned between vehicles while preserving their history.</span></div><div class="card">${tbl([["Card",x=>E(x.card_number)], ["Issuer",x=>E(x.issuer||'—')],["Vehicle",x=>E(V[x.vehicle_id]?.vehicle_code||'—')],["Driver",x=>E(R[x.driver_id]?.name||'—')],["Fuel",x=>E(x.fuel_type||'—')],["Monthly Limit",x=>'EGP '+n(x.monthly_limit,2)],["Used",x=>'EGP '+n(x.used_amount,2)],["Expiry",x=>fd(x.expiry_date)],["Status",x=>badge(x.status)]],rows)}</div>`;
+}
+function tolls(){
+ const V=vm(),R=dm(),T=Object.fromEntries((D.trips||[]).map(t=>[t.id,t]));
+ const total=(D.tolls||[]).reduce((s,x)=>s+(+x.amount||0),0);
+ return `<div class="grid k6"><div class="card"><div class="lb">Total Toll Fees</div><div class="kv blue">EGP ${n(total,2)}</div></div><div class="card"><div class="lb">Transactions</div><div class="kv">${(D.tolls||[]).length}</div></div><div class="card"><div class="lb">Note</div><div class="lb">The driver uploads the receipt photo and enters the toll amount only.</div></div></div><div class="card" style="margin-top:14px">${tbl([["Date",x=>fd(x.toll_at)], ["Driver",x=>E(R[x.driver_id]?.name||'—')],["Vehicle",x=>E(V[x.vehicle_id]?.vehicle_code||'—')],["Trip",x=>E(T[x.trip_id]?.trip_code||'—')],["Toll Amount",x=>'EGP '+n(x.amount,2)],["Receipt",x=>x.image_url?'<span class="b ok">Image available</span>':'—']],D.tolls||[])}</div>`;
+}
+function exp(){
+ const V=vm(),R=dm(),T=Object.fromEntries((D.trips||[]).map(t=>[t.id,t])); const rows=D.expenses||[]; const total=rows.reduce((s,x)=>s+(+x.amount||0),0);
+ return `<div class="grid k6"><div class="card"><div class="lb">Total Expenses</div><div class="kv">EGP ${n(total,2)}</div></div><div class="card"><div class="lb">Transactions</div><div class="kv">${rows.length}</div></div></div><div class="card" style="margin-top:14px">${tbl([["Date",x=>fd(x.expense_at||x.created_at)],["Type",x=>E(x.expense_type||'—')],["Vehicle",x=>E(V[x.vehicle_id]?.vehicle_code||'—')],["Driver",x=>E(R[x.driver_id]?.name||'—')],["Trip",x=>E(T[x.trip_id]?.trip_code||'—')],["Amount",x=>'EGP '+n(x.amount,2)],["Description",x=>E(x.description||'—')]],rows)}</div>`;
+}
+async function passkeySettings(){
+  try{
+    if(!sb.auth.registerPasskey) throw new Error("The current Supabase version does not support Passkeys.");
+    const {data,error}=await sb.auth.registerPasskey();
+    if(error) throw error;
+    alert("Face ID / Passkey registered successfully on this device.");
+    render();
+  }catch(e){alert(e?.message||"Unable to register Passkey.");}
+}
+async function passkeyList(){
+  try{const {data,error}=await sb.auth.passkey.list();if(error)throw error;return data||[]}catch(e){return []}
+}
+function set(){return `<div class="grid k6"><div class="card"><div class="lb">System Administrator</div><b>${E(CFG.adminEmail)}</b></div><div class="card"><div class="lb">Timezone</div><b>${CFG.tz}</b></div><div class="card"><div class="lb">Fallback Consumption</div><b>${CFG.fallbackL100} L/100km</b></div></div><div class="card" style="margin-top:14px"><h3>🔐 Login Security</h3><div class="lb" style="margin-bottom:12px">Face ID or fingerprint can be registered using Passkey. Your biometric image is not stored in the system; the device keeps the private key.</div><button class="btn" onclick="passkeySettings()">Enable Face ID / Passkey on this device</button><div class="lb" style="margin-top:10px">After activation, the Face ID / Passkey sign-in option will appear on the Sign in screen.</div></div><div class="card" style="margin-top:14px"><h3>Fuel Prices</h3>${tbl([["Type",p=>E(p.fuel_type)],["Price / L",p=>n(p.price_per_liter,2)],["From",p=>fd(p.effective_from)],["To",p=>fd(p.effective_to)],["Status",p=>badge(p.active?'Active':'Inactive')]],D.prices)}</div><div class="card" style="margin-top:14px"><h3>Toll Fee Settings</h3><div class="lb">In the Driver app: receipt image + toll amount only. Vehicle, Driver, Date and Trip are recorded automatically.</div></div>`}
+// English page subtitles
+const _render=render; render=function(){
+ const labels={dash:['Dashboard','Fleet operational overview'],veh:['Vehicles','Fleet status and usage'],drv:['Drivers','Driver activity'],fuel:['Fuel Reports','Receipts and consumption'],cards:['Fuel Cards','Card and limit management'],trips:['Trips','All trips in selected period'],tolls:['Toll Fees','Receipt photos and amounts'],exp:['Expenses','Operating expenses'],exc:['Exceptions','Items needing review'],rep:['Reports','Reports calculated from system data'],set:['Settings','System settings and prices'],vd:['Vehicle details','Vehicle details and operations']};
+ kill(); $('#bc').textContent=(D.exc||[]).filter(e=>/OPEN/i.test(e.status)).length; const z=labels[page]||labels.dash; $('#pt').textContent=z[0];$('#ps').textContent=z[1];document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.p==(page=='vd'?'veh':page)));$('#v').innerHTML=({dash,veh,drv,fuel,cards,trips,tolls,exp,exc,rep,set,vd})[page]();(window['after_'+page]||(()=>{}))();document.querySelectorAll('tr[data-t]').forEach(r=>r.onclick=()=>openTrip(r.dataset.t));document.querySelectorAll('tr[data-v]').forEach(r=>r.onclick=()=>{VID=r.dataset.v;TAB='Overview';page='vd';render()});document.querySelectorAll('tr[data-e]').forEach(r=>r.onclick=()=>openExc(r.dataset.e));
+};
+// Use Arabic login copy without changing authentication logic
+$('#em').placeholder='Email';$('#pw').placeholder='Password';
+
+function drv(){const V=vm();return `<div class="card">${tbl([["Code",d=>E(d.driver_code)],["Name",d=>E(d.name)],["Phone",d=>E(d.phone)],["Vehicle",d=>E(V[d.vehicle_id]?.vehicle_code||'—')],["Trips",d=>D.trips.filter(t=>t.driver_id==d.id).length],["KM",d=>n(sum(D.trips.filter(t=>t.driver_id==d.id),tk))],["Fuel (L)",d=>n(sum(D.fr.filter(f=>f.driver_id==d.id),f=>f.liters),1)],["Exceptions",d=>D.exc.filter(e=>e.driver_id==d.id).length],["Status",d=>badge(d.active?'Active':'Inactive')]],D.drv,d=>`data-d="${d.id}"`)}</div>`}
+function openDriver(id){const d=D.drv.find(x=>x.id===id);if(!d)return;const V=vm()[d.vehicle_id],tr=D.trips.filter(t=>t.driver_id===id),fuel=D.fr.filter(f=>f.driver_id===id),toll=(D.tolls||[]).filter(x=>x.driver_id===id);const m=$('#modal');m.classList.remove('hide');m.onclick=e=>{if(e.target===m)m.classList.add('hide')};m.innerHTML=`<div><div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">${E(d.name)}</h2><button class="btn g" onclick="$('#modal').classList.add('hide')">Close</button></div><div class="grid k6" style="margin:14px 0"><div class="card"><div class="lb">Code</div><b>${E(d.driver_code)}</b></div><div class="card"><div class="lb">Phone</div><b>${E(d.phone||'—')}</b></div><div class="card"><div class="lb">Vehicle</div><b>${E(V?.vehicle_code||'—')}</b></div><div class="card"><div class="lb">Trips</div><b>${tr.length}</b></div><div class="card"><div class="lb">KM</div><b>${n(sum(tr,tk))}</b></div><div class="card"><div class="lb">Toll Fees</div><b>EGP ${n(toll.reduce((s,x)=>s+(+x.amount||0),0),2)}</b></div></div><div class="card"><h3>Activity Summary</h3><div class="lb">Fuel: ${n(sum(fuel,x=>x.liters),1)} L — Toll Fees: EGP ${n(toll.reduce((s,x)=>s+(+x.amount||0),0),2)}</div></div></div>`}
+function vd(){const v=vm()[VID];if(!v)return NOTE('Vehicle not found.');const ts=D.trips.filter(t=>t.vehicle_id==VID),f=D.fr.filter(x=>x.vehicle_id==VID),L=sum(f,x=>x.liters),km=sum(ts,tk),dr=D.drv.find(d=>d.vehicle_id==VID),docs=(D.docs||[]).filter(x=>x.vehicle_id==VID);const c=(a,b)=>`<div class="card"><div class="lb">${a}</div><div class="kv" style="font-size:18px">${b}</div></div>`;const T={Overview:`<div class="grid k6">${[["Vehicle code",E(v.vehicle_code)],["Plate",E(v.plate_number)],["Make",E(v.make||'—')],["Model",E(v.model||'—')],["Model year",v.model_year||'—'],["Fuel type",E(v.fuel_type)],["Consumption rate",n(v.consumption_l_per_100km,1)+' L/100km'],["Assigned driver",E(dr?.name||'—')],["Status",badge(v.active?'Active':'Inactive')]].map(a=>c(...a)).join('')}</div>`,Trips:`<div class="card">${tbl(tripCols(),ts,tAttr)}</div>`,Fuel:wrap('fr',x=>x.vehicle_id==VID,fuel0),Expenses:exp(),Documents:`<div class="card">${tbl([["Type",x=>E(x.document_type||'—')],["Number",x=>E(x.document_number||'—')],["Issue Date",x=>fd(x.issue_date)],["Expiry",x=>fd(x.expiry_date)],["Notes",x=>E(x.notes||'—')],["Image",x=>x.image_url?'<span class="b ok">Attached</span>':'—']],docs)}</div>`};return `<button class="btn g" onclick="page='veh';render()">Back to Vehicles</button><div class="grid k6" style="margin:14px 0">${[["Total KM",n(km)],["Avg fuel",km?n(L/km*100,1)+' L/100km':'—'],["Total fuel",n(L,1)+' L'],["Fuel cost",'EGP '+n(sum(f,x=>x.total_amount),2)],["Trips",ts.length]].map(a=>c(...a)).join('')}</div><div class="tabs">${Object.keys(T).map(t=>`<button class="${t==TAB?'on':''}" onclick="TAB='${t}';render()">${t}</button>`).join('')}</div>${T[TAB]}`}
+// wire driver rows after each render
+const _v7render=render; render=function(){_v7render();document.querySelectorAll('tr[data-d]').forEach(r=>r.onclick=()=>openDriver(r.dataset.d));};
+
+// English UI: no runtime Arabic translation layer.
+
+/* ===== GPS V5: single source of truth ===== */
+let fleetGpsTimer=null, fleetTrack=null, fleetStreetLayer=null, fleetSatelliteLayer=null, fleetBaseControl=null;
+function gpsRowsForVehicle(rows, vehicleId){
+  return (rows||[]).filter(x=>x.vehicle_id===vehicleId && Number.isFinite(+x.latitude) && Number.isFinite(+x.longitude) && Number.isFinite(+x.accuracy_m) && +x.accuracy_m<=100)
+    .sort((a,b)=>new Date(a.captured_at)-new Date(b.captured_at));
+}
+function latestGpsByVehicle(rows){
+  const out={};
+  (D.veh||[]).forEach(v=>{const a=gpsRowsForVehicle(rows,v.id); if(a.length)out[v.id]=a[a.length-1];});
+  return out;
+}
+function vehicleIcon(state,heading){
+  const bg=state==='live'?'#35e0cf':state==='stop'?'#f0b44c':'#73828a';
+  const rot=Number.isFinite(+heading)?+heading:0;
+  return L.divIcon({className:'fleetMarker',html:'<div style="transform:rotate('+rot+'deg);width:22px;height:22px;position:relative"><div style="position:absolute;left:7px;top:1px;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:10px solid '+bg+'"></div><div style="position:absolute;left:3px;top:7px;width:16px;height:12px;border-radius:50%;background:'+bg+';border:3px solid #07121c;box-shadow:0 0 14px '+bg+'99"></div></div>',iconSize:[22,22],iconAnchor:[11,11]});
+}
+function renderFleetMap(){
+  const el=document.getElementById('fleetMap'); if(!el || typeof L==='undefined')return;
+  if(!fleetMap){
+    fleetMap=L.map(el,{zoomControl:true,attributionControl:true}).setView([30.0444,31.2357],6);
+    fleetStreetLayer=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
+    fleetSatelliteLayer=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Tiles © Esri'});
+    fleetStreetLayer.addTo(fleetMap);
+    fleetBaseControl=L.control.layers({'Street Map':fleetStreetLayer,'Satellite':fleetSatelliteLayer},null,{position:'topright',collapsed:false}).addTo(fleetMap);
+  }
+  const latest=latestGpsByVehicle(D.loc||[]), points=[], seen={};
+  const trackPoints=[];
+  (D.veh||[]).forEach(v=>{
+    const x=latest[v.id]; if(!x)return; seen[v.id]=true;
+    const lat=+x.latitude,lng=+x.longitude; if(!Number.isFinite(lat)||!Number.isFinite(lng))return;
+    const age=Math.max(0,(Date.now()-new Date(x.captured_at).getTime())/60000), moving=Number(x.speed_kmh||0)>5;
+    const state=age<=3?(moving?'Moving':'Stopped'):'Offline',cls=age<=3?(moving?'live':'stop'):'off';
+    const dr=(D.drv||[]).find(d=>d.id===x.driver_id),tr=(D.trips||[]).find(t=>t.id===x.trip_id);
+    const html='<div style="min-width:220px;direction:ltr;text-align:left"><b>🚗 '+E(v.vehicle_code)+'</b><br>Driver: '+E(dr?.name||'—')+'<br>Trip: '+E(tr?.trip_code||'—')+'<br>Speed: '+(x.speed_kmh==null?'—':n(x.speed_kmh,1))+' km/h<br>Accuracy: '+n(x.accuracy_m,0)+' m<br>Last update: '+ft(x.captured_at)+'<br><b>Status: '+state+'</b></div>';
+    let m=fleetMarkers.find(z=>z._vehicleId===v.id);
+    if(!m){m=L.marker([lat,lng],{icon:vehicleIcon(cls,x.heading)}).addTo(fleetMap);m._vehicleId=v.id;fleetMarkers.push(m);} else {m.setLatLng([lat,lng]);m.setIcon(vehicleIcon(cls,x.heading));}
+    m.bindPopup(html); points.push([lat,lng]);
+    gpsRowsForVehicle(D.loc||[],v.id).slice(-30).forEach(p=>trackPoints.push([+p.latitude,+p.longitude]));
+  });
+  fleetMarkers=fleetMarkers.filter(m=>{if(!seen[m._vehicleId]){try{fleetMap.removeLayer(m)}catch(_){}return false}return true});
+  if(fleetTrack){try{fleetMap.removeLayer(fleetTrack)}catch(_){}fleetTrack=null;}
+  if(trackPoints.length>1)fleetTrack=L.polyline(trackPoints,{weight:4,opacity:.75}).addTo(fleetMap);
+  if(points.length && !fleetMap._fleetInitialFit){fleetMap.setView(points[0],15);fleetMap._fleetInitialFit=true;}
+  const lbl=document.getElementById('fleetLiveLabel'); if(lbl)lbl.textContent=(points.length?points.length:'0')+' vehicles • LIVE GPS';
+}
+async function refreshGpsOnly(){
+  try{
+    const r=await sb.from('vehicle_locations').select('*').order('captured_at',{ascending:false}).limit(5000);
+    if(r.error)throw r.error; D.loc=r.data||[];
+    if(page==='dash' && document.getElementById('fleetMap'))renderFleetMap();
+  }catch(e){const el=document.getElementById('fleetLiveLabel');if(el)el.textContent='Unable to update location';}
+}
+function after_dash(){renderFleetMap();if(fleetGpsTimer)clearInterval(fleetGpsTimer);fleetGpsTimer=setInterval(refreshGpsOnly,3000);}
+
+function dash(){
+  const T=D.trips||[], km=T.reduce((s,t)=>s+(+tk(t)||0),0), L=(D.fr||[]).reduce((s,f)=>s+(+f.liters||0),0), C=(D.fr||[]).reduce((s,f)=>s+(+f.total_amount||0),0), ox=(D.exc||[]).filter(e=>/OPEN/i.test(e.status)).length;
+  const toll=(D.tolls||[]).reduce((s,x)=>s+(+x.amount||0),0), active=(D.veh||[]).filter(v=>v.active).length;
+  const recent=T.slice(0,5);
+  return `<div class="grid k6">
+  <div class="card"><div class="lb">Active Vehicles</div><div class="kv">${active}/${D.veh.length}</div><div class="lb">Total Fleet</div></div>
+  <div class="card"><div class="lb">Active Drivers</div><div class="kv">${D.drv.filter(d=>d.active).length}</div><div class="lb">Total Drivers: ${D.drv.length}</div></div>
+  <div class="card"><div class="lb">Total KM</div><div class="kv">${n(km)} KM</div><div class="lb">For selected period</div></div>
+  <div class="card"><div class="lb">Total Fuel</div><div class="kv accent">${n(L,1)} L</div><div class="lb">From receipts</div></div>
+  <div class="card"><div class="lb">Toll Fees</div><div class="kv blue">EGP ${n(toll,2)}</div><div class="lb">For selected period</div></div>
+  <div class="card"><div class="lb">Open Alerts</div><div class="kv ${ox?'warn':''}">${ox}</div><div class="lb">Needs review</div></div></div>
+  <div class="v7dash">
+   <div class="card v7map"><div class="v7maptitle"><b>🚚 Live Fleet Tracking</b><span id="fleetLiveLabel">Loading GPS...</span></div><div id="fleetMap"></div><div class="fleetOverlay"><div class="fleetLegend"><span><i class="fleetDot live"></i> Moving</span><span><i class="fleetDot stop"></i> Stopped</span><span><i class="fleetDot off"></i> Offline</span></div></div></div>
+   <div class="v7side">
+    <div class="card"><h3>Fleet Status</h3><div class="gauge"><div class="gaugeItem"><div class="ring"><b>${active}</b></div><div class="glabel">Active</div></div><div class="gaugeItem"><div class="ring"><b>${D.trips.filter(t=>/OPEN/i.test(t.status)).length}</b></div><div class="glabel">On Trip</div></div><div class="gaugeItem"><div class="ring"><b>${ox}</b></div><div class="glabel">Alerts</div></div></div></div>
+    <div class="card"><h3>Latest Alerts</h3>${(D.exc||[]).slice(0,4).map(e=>`<div class="alertRow"><span class="dot ${/CRIT|HIGH/i.test(e.severity)?'red':''}"></span><b>${E(e.exception_type||'Exception')}</b><div class="lb">${E(e.description||'')}</div></div>`).join('')||'<div class="msg">No alerts</div>'}</div>
+   </div>
+  </div>
+  <div class="v7bottom"><div class="card"><h3>Recent Trips</h3>${tbl(tripCols(),recent,tAttr)}</div><div class="card"><h3>Operating Cost Analysis</h3><div class="miniStat"><span>Fuel Cost</span><strong>EGP ${n(C,2)}</strong></div><div class="miniStat"><span>Toll Fees</span><strong class="blue">EGP ${n(toll,2)}</strong></div><div class="miniStat"><span>Total Operating Cost</span><strong class="accent">EGP ${n(C+toll,2)}</strong></div><div class="miniStat"><span>Average Fuel</span><strong>${km?n(L/km*100,1):'—'} L/100km</strong></div></div></div>`;
+}
+
+</script></body></html>
